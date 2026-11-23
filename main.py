@@ -1,18 +1,24 @@
 from fastapi import FastAPI
-from app.routers import items
+
 from app.config import Settings
+from app.routers import items
 
 settings = Settings()
-app = FastAPI(title=settings.app_name)
+app = FastAPI(
+    title=settings.app_name,
+    description="Лабораторная работа №6 «Введение в FastAPI». Работа с товарами.",
+    version="1.0.0",
+    contact={"name": "Студент", "email": settings.admin_email},
+)
 app.include_router(items.router)
 
 
-@app.get("/")
+@app.get("/", tags=["general"], summary="Главная страница")
 def read_root():
     return {"message": "Hello, FastAPI!"}
 
 
-@app.get("/info", summary="Настройки приложения")
+@app.get("/info", tags=["general"], summary="Настройки приложения")
 def get_info():
     return {
         "app_name": settings.app_name,
