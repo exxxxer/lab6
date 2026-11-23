@@ -1,6 +1,10 @@
+import time
+
 from fastapi import FastAPI
+from fastapi import Request
 
 from app.config import Settings
+from app.logging_setup import get_logger
 from app.routers import items
 
 settings = Settings()
@@ -11,6 +15,20 @@ app = FastAPI(
     contact={"name": "Студент", "email": settings.admin_email},
 )
 app.include_router(items.router)
+logger = get_logger()
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    started = time.perf_counter()
+    try:
+        response = await call_next(request)
+    except Exception:
+        logger.exception("%s %s -> ошибка сервера", request.method, request.url.path)
+        raise
+    elapsed_ms = (time.perf_counter() - started) * 1000
+    logger.info("%s %s -> %d | %.1f ms", request.method, request.url.path, response.status_code, elapsed_ms)
+    return response
 
 
 @app.get("/", tags=["general"], summary="Главная страница")
